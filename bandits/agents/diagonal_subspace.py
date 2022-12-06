@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-from jsl.nlds.diagonal_extended_kalman_filter import DiagonalExtendedKalmanFilter
+from jsl.nlds.base import NLDS
 from .ekf_subspace import SubspaceNeuralBandit
 from tensorflow_probability.substrates import jax as tfp
 
@@ -30,7 +30,7 @@ class DiagonalSubspaceNeuralBandit(SubspaceNeuralBandit):
         def fx(params, context, action):
             return self.predict_rewards(params, context)[action, None]
 
-        ekf = DiagonalExtendedKalmanFilter(fz, fx, Q, R)
+        ekf = NLDS(fz, fx, Q, R)
         self.ekf = ekf
 
         bel = (params_subspace_init, covariance_subspace_init, t)

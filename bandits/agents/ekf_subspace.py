@@ -7,7 +7,9 @@ from flax.training import train_state
 from sklearn.decomposition import PCA
 from .agent_utils import train, generate_random_basis, convert_params_from_subspace_to_full
 from scripts.training_utils import MLP
-from jsl.nlds.extended_kalman_filter import ExtendedKalmanFilter
+import sys
+sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+from JSL.jsl.nlds.extended_kalman_filter import ExtendedKalmanFilter
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions

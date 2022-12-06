@@ -7,7 +7,7 @@ import optax
 from flax.training import train_state
 
 from .agent_utils import train
-from jsl.nlds.extended_kalman_filter import ExtendedKalmanFilter
+from jsl.nlds.base import NLDS
 from scripts.training_utils import MLP
 from tensorflow_probability.substrates import jax as tfp
 
@@ -88,7 +88,7 @@ class EKFNeuralBandit:
         def fx(params, context, action):
             return predict_rewards(params, context)[action, None]
 
-        ekf = ExtendedKalmanFilter(fz, fx, Q, R)
+        ekf = NLDS(fz, fx, Q, R)
         self.ekf = ekf
         bel = (params_subspace_init, covariance_subspace_init, 0)
 
