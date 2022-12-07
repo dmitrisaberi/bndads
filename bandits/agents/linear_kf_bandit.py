@@ -2,7 +2,10 @@ import jax.numpy as jnp
 from jax.lax import scan
 from jax.random import split
 import sys
-sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(current_dir, '..')))
+
 from JSL.jsl.lds.kalman_filter import KalmanFilterNoiseEstimation
 from tensorflow_probability.substrates import jax as tfp
 

@@ -8,7 +8,10 @@ from sklearn.decomposition import PCA
 from .agent_utils import train, generate_random_basis, convert_params_from_subspace_to_full
 from scripts.training_utils import MLP
 import sys
-sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(current_dir, '..')))
+
 from JSL.jsl.nlds.extended_kalman_filter import ExtendedKalmanFilter
 from tensorflow_probability.substrates import jax as tfp
 
