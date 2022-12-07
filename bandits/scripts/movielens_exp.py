@@ -113,6 +113,7 @@ def main(config):
                 start = time()
                 warmup_rewards, rewards_trace, opt_rewards = train(key, properties["bandit"], movielens, npulls,
                                                                    config.ntrials, properties["kwargs"], neural=False)
+                print(type(properties["bandit"]))
                 rtotal, rstd = summarize_results(warmup_rewards, rewards_trace)
                 end = time()
                 print(f"\tTime : {end - start}:0.3f")

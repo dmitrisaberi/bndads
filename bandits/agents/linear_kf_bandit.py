@@ -1,7 +1,9 @@
 import jax.numpy as jnp
 from jax.lax import scan
 from jax.random import split
-from jsl.lds.kalman_filter import LDS
+import sys
+sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+from JSL.jsl.lds.kalman_filter import KalmanFilterNoiseEstimation
 from tensorflow_probability.substrates import jax as tfp
 
 tfd = tfp.distributions
@@ -26,7 +28,7 @@ class LinearKFBandit:
         A = jnp.eye(self.num_features)
         Q = 0
 
-        self.kf = LDS(A, Q, mu, Sigma, v, tau)
+        self.kf = KalmanFilterNoiseEstimation(A, Q, mu, Sigma, v, tau)
 
         def warmup_update(bel, cur):
             context, action, reward = cur
