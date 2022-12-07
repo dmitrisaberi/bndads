@@ -1,8 +1,8 @@
-# Deep Bayesian Bandits for Recommendation Systems
+# Deep Bayesian Contextual Bandits for Recommendation Systems
 
 By [Dmitri Saberi](http://github.com/dmitrisaberi) and [Sal Spina](https://github.com/salrspina).
 
-Everything below is a placeholder for now; ignore.
+Everything below is a placeholder; ignore for now.
 
 [Final report](https://arxiv.org/abs/2112.00195).
 
