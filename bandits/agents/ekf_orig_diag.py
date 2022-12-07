@@ -7,7 +7,10 @@ from flax.training import train_state
 
 from .agent_utils import train
 from scripts.training_utils import MLP
-from jsl.nlds.base import NLDS
+
+import sys
+sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+from JSL.jsl.nlds.diagonal_extended_kalman_filter import DiagonalExtendedKalmanFilter
 
 from tensorflow_probability.substrates import jax as tfp
 
@@ -88,7 +91,7 @@ class DiagonalNeuralBandit:
         def fx(params, context, action):
             return predict_rewards(params, context)[action, None]
 
-        ekf = NLDS(fz, fx, Q, R)
+        ekf = DiagonalExtendedKalmanFilter(fz, fx, Q, R)
         self.ekf = ekf
         bel = (params_subspace_init, covariance_subspace_init, 0)
 

@@ -86,7 +86,7 @@ class LimitedMemoryNeuralLinearBandit:
         """
         source: https://github.com/google/jax/issues/4590
         """
-        buffer = buffer[index].set(new_item)
+        buffer = buffer.at[index].set(new_item)
         index = (index + 1) % self.buffer_size
         return buffer, index
 

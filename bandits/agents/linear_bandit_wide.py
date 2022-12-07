@@ -28,7 +28,7 @@ class LinearBanditWide:
 
     def widen(self, context, action):
         phi = jnp.zeros((self.num_arms, self.num_features))
-        phi = phi.set[action].set(context)
+        phi = phi.at[action].set(context)
         return phi.flatten()
 
     def init_bel(self, key, contexts, states, actions, rewards):

@@ -1,5 +1,9 @@
 import jax.numpy as jnp
-from jsl.nlds.base import NLDS
+import sys
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# sys.path.insert(0, os.path.abspath(os.path.join(current_dir, '..')))
+sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
+from JSL.jsl.nlds.diagonal_extended_kalman_filter import DiagonalExtendedKalmanFilter
 from .ekf_subspace import SubspaceNeuralBandit
 from tensorflow_probability.substrates import jax as tfp
 
@@ -30,7 +34,7 @@ class DiagonalSubspaceNeuralBandit(SubspaceNeuralBandit):
         def fx(params, context, action):
             return self.predict_rewards(params, context)[action, None]
 
-        ekf = NLDS(fz, fx, Q, R)
+        ekf = DiagonalExtendedKalmanFilter(fz, fx, Q, R)
         self.ekf = ekf
 
         bel = (params_subspace_init, covariance_subspace_init, t)
