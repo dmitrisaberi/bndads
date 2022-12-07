@@ -1,4 +1,4 @@
-# Efficient Online Bayesian Inference for Neural Bandits
+# Deep Bayesian Bandits for Recommendation Systems
 
 By [Gerardo Durán-Martín](http://github.com/gerdm), [Aleyna Kara](https://github.com/karalleyna), and [Kevin Murphy](https://github.com/murphyk)  
 AISTATS 2022. 
