@@ -1,7 +1,6 @@
 # Deep Bayesian Bandits for Recommendation Systems
 
-By [Gerardo Durán-Martín](http://github.com/gerdm), [Aleyna Kara](https://github.com/karalleyna), and [Kevin Murphy](https://github.com/murphyk)  
-AISTATS 2022. 
+By [Dmitri Saberi](http://github.com/dmitrisaberi) and [Sal Spina](https://github.com/salrspina).
 
 [Arxiv paper](https://arxiv.org/abs/2112.00195).
 
