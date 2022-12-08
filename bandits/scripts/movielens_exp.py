@@ -71,7 +71,7 @@ def main(config):
                "Linear KF": {"kwargs": linear.copy(),
                              "bandit": LinearKFBandit
                              },
-               "Limited Neural Linear": {"kwargs": nl_lim,
+                "Limited Neural Linear": {"kwargs": nl_lim,
                                          "bandit": LimitedMemoryNeuralLinearBandit
                                          },
                "Unlimited Neural Linear": {"kwargs": nl_unlim,

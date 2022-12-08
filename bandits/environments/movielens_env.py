@@ -37,7 +37,6 @@ def get_movielens(rank_k, num_movies, repeat=5):
     context_dim = rank_k
 
     # Compute the matrix factorization.
-    print(sys.path)
     data_matrix = load_movielens_data("../bandit-data/ml-100k/u.data")
     # Keep only the first items.
     data_matrix = data_matrix[:, :num_movies]
