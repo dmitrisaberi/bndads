@@ -2,7 +2,7 @@
 
 By [Dmitri Saberi](http://github.com/dmitrisaberi) and [Sal Spina](https://github.com/salrspina).
 
-Everything below is a placeholder; ignore for now.
+Credit to [Kevin Murphy](https://github.com/murphyk); this repo is a fork of [probml/bandits](https://github.com/probml/bandits).
 
 [Final report](https://arxiv.org/abs/2112.00195).
 
