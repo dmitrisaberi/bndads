@@ -1,144 +1,145 @@
+import jax
 import jax.numpy as jnp
-from jax import lax
 from jax.random import split
-
+from jax import vmap, lax
+from jax.nn import one_hot
 import optax
 
 from flax.training import train_state
-
-from .agent_utils import train
+from scripts.training_utils import train
 from scripts.training_utils import MLP
-from tensorflow_probability.substrates import jax as tfp
-
-tfd = tfp.distributions
 
 
 class DeepBayesianBandit:
-    def __init__(self, num_features, num_arms, model=None, opt=optax.adam(learning_rate=1e-2), eta=6.0, lmbda=0.25,
-                 update_step_mod=100, batch_size=5000, nepochs=3000):
+    def __init__(self, num_features, num_arms, model=None, update_step_mod=100,
+    opt=optax.adam(learning_rate=1e-2), epsilon=0.8, nepochs=30, memory=None, reg=1):
         self.num_features = num_features
         self.num_arms = num_arms
-
-        if model is None:
-            self.model = MLP(500, num_arms)
-        else:
-            try:
-                self.model = model()
-            except:
-                self.model = model
-        self.opt = opt
-        self.eta = eta
-        self.lmbda = lmbda
+        self.model = model
+        # if model is None:
+        #     self.model = MLP(500, num_arms)
+        # else:
+        #     try:
+        #         self.model = model()
+        #     except:
+        #         self.model = model
         self.update_step_mod = update_step_mod
-        self.batch_size = batch_size
+        self.opt = opt
+        self.epsilon = epsilon
         self.nepochs = nepochs
+        self.memory = memory
+        self.reg = reg
 
-    def init_bel(self, key, contexts, states, actions, rewards):
-        key, mykey = split(key)
-        initial_params = self.model.init(mykey, jnp.zeros((self.num_features,)))
-        initial_train_state = train_state.TrainState.create(apply_fn=self.model.apply, params=initial_params,
-                                                            tx=self.opt)
-
-        mu = jnp.zeros((self.num_arms, 500))
-        Sigma = 1 / self.lmbda * jnp.eye(500) * jnp.ones((self.num_arms, 1, 1))
-        a = self.eta * jnp.ones((self.num_arms,))
-        b = self.eta * jnp.ones((self.num_arms,))
-        t = 0
-
-        def update(bel, x):
-            context, action, reward = x
-            return self.update_bel(bel, context, action, reward), None
-
-        initial_bel = (mu, Sigma, a, b, initial_train_state, t)
-        self.init_contexts_and_states(contexts, states)
-        bel, _ = lax.scan(update, initial_bel, (contexts, actions, rewards))
-        return bel
+    def encode(self, context, action):
+        action_onehot = one_hot(action, self.num_arms)
+        x = jnp.concatenate([context, action_onehot])
+        return x
 
     def cond_update_params(self, t):
         return (t % self.update_step_mod) == 0
 
-    def init_contexts_and_states(self, contexts, states):
-        self.contexts = contexts
-        self.states = states
-
     def update_bel(self, bel, context, action, reward):
-        state = bel
+        params, X, y, t = bel
+        state = train_state.TrainState.create(apply_fn=self.model.apply, params=params,
+                                                            tx=self.opt)
 
         if self.memory is not None:  # finite memory
-            if len(self.y) == self.memory:  # memory is full
-                self.X.pop(0)
-                self.y.pop(0)
+            if len(y) == self.memory:  # memory is full
+                X.pop(0)
+                y.pop(0)
 
-        # include recent features/rewards in training
         x = self.encode(context, action)
-        self.X = jnp.vstack([self.X, x])
-        self.y = jnp.append(self.y, reward)
+        X = jnp.vstack([X, x])
+        y = jnp.append(y, reward)
+        X = jnp.delete(X, 0, axis=0)
+        y = jnp.delete(y, 0, axis=0)
 
-        # re-train network
-        state = lax.cond(self.cond_update_params(t),
-                         lambda bel: train(self.model, bel[0], self.X, self.y, nepochs=self.nepochs, t=bel[1]),
-                         lambda bel: bel[0], bel)
+        state = self.fit_model(state, X, y)
+      #  state = lax.cond(self.cond_update_params(t),
+      #                   lambda bel: self.fit_model(state, X, y, action),
+      #                   lambda bel: bel[0], bel)
 
-        bel = (state)
+        t += 1
+
+        bel = (state.params, X, y, t)
         return bel
 
-    def update_bel(self, bel, context, action, reward):
-        mu, Sigma, a, b, state, t = bel
-
-        sgd_params = (state, t)
-
-        def loss_fn(self, params):
-            n_samples, *_ = self.contexts.shape
-            final_t = lax.cond(t == 0, lambda t: n_samples, lambda t: t.astype(int), t)
-            sample_range = (jnp.arange(n_samples) <= t)[:, None]
-
-            pred_reward = self.model.apply({"params": params}, self.contexts)
-            loss = (optax.l2_loss(pred_reward, self.states) * sample_range).sum() / final_t
-            return loss, pred_reward
-
-        state = lax.cond(self.cond_update_params(t),
-                         lambda sgd_params: train(sgd_params[0], loss_fn=loss_fn, nepochs=self.nepochs)[0],
-                         lambda sgd_params: sgd_params[0], sgd_params)
-
-        transformed_context = self.featurize(state.params, context)
-
-        mu_k, Sigma_k = mu[action], Sigma[action]
-        Lambda_k = jnp.linalg.inv(Sigma_k)
-        a_k, b_k = a[action], b[action]
-
-        # weight params
-        Lambda_update = jnp.outer(transformed_context, transformed_context) + Lambda_k
-        Sigma_update = jnp.linalg.inv(Lambda_update)
-        mu_update = Sigma_update @ (Lambda_k @ mu_k + transformed_context * reward)
-
-        # noise params
-        a_update = a_k + 1 / 2
-        b_update = b_k + (reward ** 2 + mu_k.T @ Lambda_k @ mu_k - mu_update.T @ Lambda_update @ mu_update) / 2
-
-        # update only the chosen action at time t
-        mu = mu.at[action].set(mu_update)
-        Sigma = Sigma.at[action].set(Sigma_update)
-        a = a.at[action].set(a_update)
-        b = b.at[action].set(b_update)
-        t = t + 1
-
-        bel = (mu, Sigma, a, b, state, t)
+    # todo: states is a useless variable. fix for design
+    def init_bel(self, key, contexts, states, actions, rewards):
+        X = jax.vmap(self.encode)(contexts, actions)
+        y = rewards
+        t = 0
+        params = self.model.init(key, X)["params"]
+        initial_train_state = train_state.TrainState.create(apply_fn=self.model.apply, params=params,
+                                                            tx=self.opt)
+        initial_train_state = self.fit_model(initial_train_state, X, y)
+        bel = (initial_train_state.params, X, y, t)
         return bel
 
-    def sample_params(self, key, bel):
-        mu, Sigma, a, b, _, _ = bel
-        sigma_key, w_key = split(key)
-        sigma2 = tfd.InverseGamma(concentration=a, scale=b).sample(seed=sigma_key)
-        covariance_matrix = sigma2[:, None, None] * Sigma
-        w = tfd.MultivariateNormalFullCovariance(loc=mu, covariance_matrix=covariance_matrix).sample(seed=w_key)
-        return w
-
+    # eps-greedy approach
     def choose_action(self, key, bel, context):
-        # Thompson sampling strategy
-        # Could also use epsilon greedy or UCB
-        state = bel[-2]
-        context_transformed = self.featurize(state.params, context)
-        w = self.sample_params(key, bel)
-        predicted_reward = jnp.einsum("m,km->k", context_transformed, w)
-        action = predicted_reward.argmax()
+        params, X, y, t = bel
+        key, mykey = split(key)
+        
+        def explore(actions):
+            # random action
+            _, mykey = split(key)
+            action = jax.random.choice(mykey, actions)
+            return action
+        
+        def exploit(actions):
+            # greedy action
+            def get_reward(a):
+                x = self.encode(context, a)
+                return self.model.apply({"params": params}, x)
+            predicted_rewards = vmap(get_reward)(actions)
+            action = predicted_rewards.argmax()
+            return action
+
+        coin = jax.random.bernoulli(mykey, self.epsilon, (1,))[0]
+        actions = jnp.arange(self.num_arms)
+        action = jax.lax.cond(coin == 0, explore, exploit, actions)
         return action
+
+        
+
+    def fit_model(self, state, X, y):
+        @jax.jit
+        def train_step(state, batch):
+            def loss_fn(params):
+                predictions = state.apply_fn({"params": params}, X)
+                loss = jnp.mean(optax.l2_loss(predictions, y)) + self.reg*jnp.mean(optax.l2_loss(predictions, jnp.zeros(predictions.shape)))
+                return loss, predictions
+            # get gradients, update
+            grad_fn = jax.value_and_grad(loss_fn, has_aux=True)
+            (_, logits), grads = grad_fn(state.params)
+            state = state.apply_gradients(grads=grads)
+            return state
+
+        y = jnp.reshape(y, (y.shape[0],1))
+        def train_epoch(state, train_ds_size, batch_size):
+            num_steps = train_ds_size // batch_size
+
+            for i in range(num_steps):
+                batch = {i: X[i*batch_size:min((i+1)*batch_size, X.shape[0])]}
+                state = train_step(state, batch)
+            
+            # training_batch_metrics = jax.device_get(batch_metrics)
+            # training_epoch_metrics = {
+            #     k: np.mean([metrics[k] for metrics in training_batch_metrics])
+            #     for k in training_batch_metrics[0]}
+
+            # print('Training - epoch: %d, loss: %.4f, accuracy: %.2f' % (epoch, training_epoch_metrics['loss'], training_epoch_metrics['accuracy'] * 100))
+
+            return state
+
+        # nesterov_momentum = 0.9
+        # learning_rate = 0.001
+        # tx = optax.sgd(learning_rate=learning_rate, nesterov=nesterov_momentum)
+
+        batch_size = 40
+
+        for _ in range(self.nepochs):
+            state = train_epoch(state, X.shape[0], batch_size)
+
+        return state
