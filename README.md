@@ -6,6 +6,8 @@ Credit to [Kevin Murphy](https://github.com/murphyk); this repo is a fork of [pr
 
 Our training script is bandits/bayesian_nn_bandit.py; experiments can be run via the bandits/scripts/subspace_bandits.ipynb notebook, or by cding into the project folder and running:
 
+```
 python bandits test
 
 python bandits run_and_plot
+```
