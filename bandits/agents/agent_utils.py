@@ -3,6 +3,8 @@ from jax import value_and_grad, jit
 from jax.random import normal
 from jax.lax import scan
 from jax.flatten_util import ravel_pytree
+from scripts.training_utils import Net
+import optax
 
 
 def NIGupdate(bel, phi, reward):
@@ -41,3 +43,11 @@ def train(state, loss_fn, nepochs=300, has_aux=True):
     state, metrics = scan(step, state, jnp.empty(nepochs))
 
     return state, metrics
+
+def likelihood(params, model, X, y, loss=optax.l2_loss):
+    predictions = model.apply({"params": params}, X)
+    y = jnp.expand_dims(y, axis=-1)
+    return jnp.mean(loss(predictions, y))
+
+#def approximate_posterior_covariance():
+#    FullLLLaplace.posterior_covariance

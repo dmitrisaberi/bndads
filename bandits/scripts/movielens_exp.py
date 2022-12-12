@@ -14,8 +14,9 @@ from agents.ekf_subspace import SubspaceNeuralBandit
 from agents.ekf_orig_diag import DiagonalNeuralBandit
 from agents.diagonal_subspace import DiagonalSubspaceNeuralBandit
 from agents.limited_memory_neural_linear import LimitedMemoryNeuralLinearBandit
+from agents.bayesian_nn_bandit import DeepBayesianBandit
 
-from .training_utils import train, MLP, MLPWide
+from .training_utils import train, MLP, MLPWide, Net, Net_ll_removed
 from .mnist_exp import mapping, rank, summarize_results, method_ordering
 
 
@@ -65,10 +66,18 @@ def main(config):
                 "system_noise": system_noise, "observation_noise": observation_noise}
     linear = {}
 
+    ucb_ll = {"policy": "UCB-LL", "opt": optax.sgd(learning_rate, momentum)}
+    ts_ll_diag = {"policy": "TS-LL-Diag", "opt": optax.sgd(learning_rate, momentum)}
+
     bandits = {"Linear": {"kwargs": linear,
                           "bandit": LinearBandit
                           },
-               "Linear KF": {"kwargs": linear.copy(),
+                "BNN-UCB-LL": {"kwargs": ucb_ll,
+                        "bandit": DeepBayesianBandit},
+
+                "BNN-TS-LL": {"kwargs": ts_ll_diag,
+                        "bandit": DeepBayesianBandit},
+                "Linear KF": {"kwargs": linear.copy(),
                              "bandit": LinearKFBandit
                              },
                 "Limited Neural Linear": {"kwargs": nl_lim,
@@ -106,8 +115,11 @@ def main(config):
 
         for model_name, model in models.items():
             for bandit_name, properties in bandits.items():
-                if not bandit_name.startswith("Linear"):
+                if not bandit_name.startswith("Linear") and not bandit_name.startswith("BNN"):
                     properties["kwargs"]["model"] = model
+                if bandit_name.startswith("BNN"):
+                    properties["kwargs"]["model"] = Net(num_arms)
+                    properties["kwargs"]["hidden_model"] = Net_ll_removed(num_arms)
                 print(f"Bandit : {bandit_name}")
                 key = PRNGKey(314)
                 start = time()

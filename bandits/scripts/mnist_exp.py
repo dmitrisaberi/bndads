@@ -17,19 +17,21 @@ from agents.limited_memory_neural_linear import LimitedMemoryNeuralLinearBandit
 
 from .training_utils import train, MLP, MLPWide, LeNet5, summarize_results
 
-method_ordering = {"EKF-Sub-SVD": 0,
-                   "EKF-Sub-RND": 1,
-                   "EKF-Sub-Diag-SVD": 2,
-                   "EKF-Sub-Diag-RND": 3,
-                   "EKF-Orig-Full": 4,
-                   "EKF-Orig-Diag": 5,
-                   "NL-Lim": 6,
-                   "NL-Unlim": 7,
-                   "Lin": 8,
-                   "Lin-KF": 9,
-                   "Lin-Wide": 9,
-                   "Lim2": 10,
-                   "NeuralTS": 11}
+method_ordering = {"BNN-UCB-LL": 0,
+                    "BNN-TS-LL": 1,
+                    "EKF-Sub-SVD": 2,
+                   "EKF-Sub-RND": 3,
+                   "EKF-Sub-Diag-SVD": 4,
+                   "EKF-Sub-Diag-RND": 5,
+                   "EKF-Orig-Full": 6,
+                   "EKF-Orig-Diag": 7,
+                   "NL-Lim": 8,
+                   "NL-Unlim": 9,
+                   "Lin": 10,
+                   "Lin-KF": 11,
+                   "Lin-Wide": 12,
+                   "Lim2": 13,
+                   "NeuralTS": 14}
 
 rank = {"MLP1": 0, "MLP2": 1, "LeNet5": 2}
 
@@ -46,7 +48,9 @@ mapping = {
     "Unlimited Neural Linear": "NL-Unlim",
     "Limited Neural Linear": "NL-Lim",
     "NeuralTS": "NeuralTS",
-    "EKF Orig Diagonal": "EKF-Orig-Diag"
+    "EKF Orig Diagonal": "EKF-Orig-Diag",
+     "BNN-UCB-LL": "BNN-UCB-LL",       
+     "BNN-TS-LL": "BNN-TS-LL"
 }
 
 

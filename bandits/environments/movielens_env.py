@@ -3,7 +3,7 @@ import numpy as  np
 import os
 import sys
 import jax.numpy as jnp
-
+sys.path.append('/Users/dmitrisaberi/Documents/GitHub/bandits')
 from .environment import BanditEnvironment
 
 MOVIELENS_NUM_USERS = 943
@@ -39,7 +39,10 @@ def get_movielens(rank_k, num_movies, repeat=5):
     # Compute the matrix factorization.
     data_matrix = load_movielens_data("../bandit-data/ml-100k/u.data")
     # Keep only the first items.
-    data_matrix = data_matrix[:, :num_movies]
+    train_cutoff = int(data_matrix.shape[0]*0.8)
+    data_matrix_train = data_matrix[:train_cutoff, :num_movies]
+    data_matrix_test = data_matrix[data_matrix_train.shape[0]:, :num_movies]
+    data_matrix = data_matrix_train
     # Filter the users with no iterm rated.
     nonzero_users = list(np.nonzero(np.sum(data_matrix, axis=1) > 0.0)[0]) * repeat
     data_matrix = data_matrix[nonzero_users, :]
@@ -56,7 +59,7 @@ def get_movielens(rank_k, num_movies, repeat=5):
     return u_hat, approx_ratings_matrix, opt_rewards
 
 
-def MovielensEnvironment(key, rank_k=20, num_movies=20, repeat=5, intercept=False):
+def MovielensEnvironment(key, rank_k=50, num_movies=50, repeat=5, intercept=False):
     X, y, opt_rewards = get_movielens(rank_k, num_movies, repeat)
 
     if intercept:

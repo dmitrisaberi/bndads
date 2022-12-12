@@ -9,7 +9,24 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+class Net_ll_removed(nn.Module):
+    num_arms: int
 
+    @nn.compact
+    def __call__(self, x):
+        x = nn.relu(nn.Dense(50, name="first_layer")(x))
+    #    x = nn.Dense(1, name="last_layer")(x)
+        return x
+
+class Net(nn.Module):
+    num_arms: int
+
+    @nn.compact
+    def __call__(self, x):
+        x = nn.relu(nn.Dense(50, name="first_layer")(x))
+        x = nn.Dense(1, name="last_layer")(x)
+        return x
+    
 class MLP(nn.Module):
     num_arms: int
 
